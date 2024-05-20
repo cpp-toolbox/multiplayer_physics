@@ -1,7 +1,6 @@
-
 # Info
 
-A minimal wrapper around the jolt physics library
+A minimal wrapper around the jolt physics library ready for a multiplayer setting
 
 # Depdendencies
 
