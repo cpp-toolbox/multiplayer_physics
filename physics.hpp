@@ -6,22 +6,33 @@
 #endif
 
 #include "jolt_implementation.hpp"
-#include "../../model_loading/model_loading.hpp"
+#include "../../graphics/graphics.hpp"
 #include "Jolt/Physics/Character/CharacterVirtual.h"
-#include "../../thread_safe_queue.hpp"
+#include "Jolt/Physics/StateRecorderImpl.h"
 #include "../../networked_input_snapshot/networked_input_snapshot.hpp"
+#include "../../expiring_data_container/expiring_data_container.hpp"
+#include "../../ring_buffer/ring_buffer.hpp"
+#include <chrono>
+
+struct PhysicsFrame {
+    JPH::StateRecorderImpl &physics_state;
+};
 
 class Physics {
   public:
     Physics();
     ~Physics();
 
-    ThreadSafeQueue<NetworkedInputSnapshot> input_snapshot_queue;
     JPH::PhysicsSystem physics_system;
+
+    // RingBuffer<PhysicsFrame> physics_frames;
+
+    void update_characters_only(float delta_time);
     void update(float delta_time);
 
     JPH::BodyID sphere_id; // should be removed in a real program
     std::unordered_map<uint64_t, JPH::Ref<JPH::CharacterVirtual>> client_id_to_physics_character;
+    void refresh_contacts(JPH::Ref<JPH::CharacterVirtual>);
     // JPH::Ref<JPH::CharacterVirtual> character;
 
     void load_model_into_physics_world(Model *model);
