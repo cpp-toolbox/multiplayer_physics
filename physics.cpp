@@ -3,7 +3,6 @@
 // The Jolt headers don't include Jolt.h. Always include Jolt.h before including
 // any other Jolt header. You can use Jolt.h in your precompiled header to speed
 // up compilation.
-#include "../../math/conversions.hpp"
 #include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 #include "Jolt/Physics/Collision/Shape/ConvexHullShape.h"
@@ -48,6 +47,22 @@ void Physics::initialize_engine() {
     physics_system.SetContactListener(contact_listener);
 }
 
+JPH::Array<JPH::Vec3> fibonacci_sphere(int num_samples) {
+    JPH::Array<JPH::Vec3> points;
+    float phi = M_PI * (std::sqrt(5.0) - 1.0);
+
+    for (int i = 0; i < num_samples; i++) {
+        float y = 1 - ((float) i / ((float) num_samples - 1)) * 2;
+        float radius = std::sqrt(1 - y * y);
+        float theta = phi * (float) i;
+
+        float x = std::cos(theta) * radius;
+        float z = std::sin(theta) * radius;
+        points.emplace_back(x, y, z);
+    }
+    return points;
+}
+
 void Physics::initialize_world_objects() {
 
     physics_system.SetGravity(JPH::Vec3(0, -40.0, 0));
@@ -63,12 +78,12 @@ void Physics::initialize_world_objects() {
     }
 
     JPH::ShapeRefC ball_shape = ball_shape_result.Get(); // We don't expect an error here, but you can check
-                                                         // floor_shape_result for HasError() / GetError()
+    // floor_shape_result for HasError() / GetError()
 
     JPH::BodyCreationSettings ball_creation_settings(ball_shape, JPH::RVec3(5.0, 20.0, 5.0), JPH::Quat::sIdentity(),
                                                      JPH::EMotionType::Dynamic, Layers::MOVING);
     JPH::Body *ball = body_interface.CreateBody(ball_creation_settings); // Note that if we run out of bodies this can
-                                                                         // return nullptr
+    // return nullptr
     body_interface.AddBody(ball->GetID(), JPH::EActivation::Activate);
     created_body_ids.push_back(ball->GetID());
     body_interface.SetLinearVelocity(ball->GetID(), JPH::Vec3(0.0f, -5.0f, 0.0f));
@@ -123,7 +138,7 @@ void Physics::load_model_into_physics_world(Model *model) {
         JPH::BodyCreationSettings mesh_settings(mesh_shape, JPH::RVec3(0.0, 0.0, 0.0), JPH::Quat::sIdentity(),
                                                 JPH::EMotionType::Static, Layers::NON_MOVING);
         JPH::Body *mesh_body = body_interface.CreateBody(mesh_settings); // Note that if we run out of bodies this can
-                                                                         // return nullptr
+        // return nullptr
         body_interface.AddBody(mesh_body->GetID(), JPH::EActivation::DontActivate);
         created_body_ids.push_back(mesh_body->GetID());
     }
@@ -139,10 +154,10 @@ void Physics::create_character(uint64_t client_id) {
     settings->mShape = new JPH::CapsuleShape(0.5f * this->character_height, this->character_radius);
     settings->mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(),
                                              -this->character_radius); // Accept contacts that touch the
-                                                                       // lower sphere of the capsule
+    // lower sphere of the capsule
 
     JPH::Ref<JPH::CharacterVirtual> character =
-        new JPH::CharacterVirtual(settings, JPH::RVec3(0.0f, 10.0f, 0.0f), JPH::Quat::sIdentity(), &physics_system);
+            new JPH::CharacterVirtual(settings, JPH::RVec3(0.0f, 10.0f, 0.0f), JPH::Quat::sIdentity(), &physics_system);
 
     client_id_to_physics_character[client_id] = character;
 }
@@ -185,7 +200,7 @@ void Physics::update_characters_only(float delta_time) {
     // update_settings.mWalkStairsStepUp = character->GetUp() *
     // update_settings.mWalkStairsStepUp.Length();
     //
-    for (const auto &pair : client_id_to_physics_character) {
+    for (const auto &pair: client_id_to_physics_character) {
         JPH::Ref<JPH::CharacterVirtual> character = pair.second;
         character->ExtendedUpdate(delta_time, -character->GetUp() * physics_system.GetGravity().Length(),
                                   update_settings, physics_system.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
@@ -197,7 +212,7 @@ void Physics::update_characters_only(float delta_time) {
 void Physics::clean_up_world() {
     JPH::BodyInterface &body_interface = physics_system.GetBodyInterface();
 
-    for (auto body_id : created_body_ids) {
+    for (auto body_id: created_body_ids) {
         body_interface.RemoveBody(body_id);
         body_interface.DestroyBody(body_id);
     }

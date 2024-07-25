@@ -6,12 +6,11 @@
 #endif
 
 #include "jolt_implementation.hpp"
-#include "../../graphics/graphics.hpp"
+#include "sbpt_generated_includes.hpp"
+
 #include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/StateRecorderImpl.h"
-#include "../../networked_input_snapshot/networked_input_snapshot.hpp"
-#include "../../expiring_data_container/expiring_data_container.hpp"
-#include "../../ring_buffer/ring_buffer.hpp"
+
 #include <chrono>
 
 struct PhysicsFrame {
@@ -19,8 +18,9 @@ struct PhysicsFrame {
 };
 
 class Physics {
-  public:
+public:
     Physics();
+
     ~Physics();
 
     JPH::PhysicsSystem physics_system;
@@ -28,20 +28,26 @@ class Physics {
     // RingBuffer<PhysicsFrame> physics_frames;
 
     void update_characters_only(float delta_time);
+
     void update(float delta_time);
 
     JPH::BodyID sphere_id; // should be removed in a real program
     std::unordered_map<uint64_t, JPH::Ref<JPH::CharacterVirtual>> client_id_to_physics_character;
+
     void refresh_contacts(JPH::Ref<JPH::CharacterVirtual>);
     // JPH::Ref<JPH::CharacterVirtual> character;
 
     void load_model_into_physics_world(Model *model);
+
     void create_character(uint64_t client_id);
+
     void delete_character(uint64_t client_id);
 
-  private:
+private:
     void initialize_engine();
+
     void initialize_world_objects();
+
     void clean_up_world();
 
     const unsigned int cMaxBodies = 1024;
