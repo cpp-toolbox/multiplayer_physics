@@ -29,7 +29,7 @@ class Physics {
 
     JPH::BodyID sphere_id; // should be removed in a real program
     void refresh_contacts(JPH::Ref<JPH::CharacterVirtual>);
-    void load_model_into_physics_world(TexturedModel &model);
+    void load_model_into_physics_world(std::vector<std::vector<glm::vec3>> &ordered_vertex_positions_for_each_mesh);
     std::unordered_map<unsigned, JPH::Ref<JPH::CharacterVirtual>> client_id_to_physics_character;
     void create_character(unsigned int client_id);
     void delete_character(unsigned int client_id);

@@ -95,24 +95,33 @@ void Physics::initialize_world_objects() {
  * \brief For every mesh in this model, we create a physics object that
  * represents the mesh
  */
-void Physics::load_model_into_physics_world(TexturedModel &model) {
+void Physics::load_model_into_physics_world(
+    std::vector<std::vector<glm::vec3>> &ordered_vertex_positions_for_each_mesh) {
 
     JPH::BodyInterface &body_interface = physics_system.GetBodyInterface();
 
-    for (auto mesh : model) {
+    for (auto &ordered_vertex_positions_for_mesh : ordered_vertex_positions_for_each_mesh) {
+
+        assert(ordered_vertex_positions_for_mesh.size() % 3 == 0);
 
         JPH::TriangleList triangles;
-        // Iterate through the indices 3 at a time
-        for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-            glm::vec3 v1 = mesh.vertex_positions[mesh.indices[i]];
-            glm::vec3 v2 = mesh.vertex_positions[mesh.indices[i + 1]];
-            glm::vec3 v3 = mesh.vertex_positions[mesh.indices[i + 2]];
+        for (std::size_t i = 0; i < ordered_vertex_positions_for_mesh.size(); i += 3) {
+            // Ensure there are at least 3 elements remaining
+            glm::vec3 &v1 = ordered_vertex_positions_for_mesh[i];
+            glm::vec3 &v2 = ordered_vertex_positions_for_mesh[i + 1];
+            glm::vec3 &v3 = ordered_vertex_positions_for_mesh[i + 2];
+
             JPH::Float3 jv1 = JPH::Float3(v1.x, v1.y, v1.z);
             JPH::Float3 jv2 = JPH::Float3(v2.x, v2.y, v2.z);
             JPH::Float3 jv3 = JPH::Float3(v3.x, v3.y, v3.z);
             JPH::Triangle tri = JPH::Triangle(jv1, jv2, jv3);
-
             triangles.push_back(tri);
+
+            // Do something with v1, v2, and v3
+            std::cout << "Triangle: \n";
+            std::cout << "v1: (" << v1.x << ", " << v1.y << ", " << v1.z << ")\n";
+            std::cout << "v2: (" << v2.x << ", " << v2.y << ", " << v2.z << ")\n";
+            std::cout << "v3: (" << v3.x << ", " << v3.y << ", " << v3.z << ")\n";
         }
 
         JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
@@ -134,53 +143,6 @@ void Physics::load_model_into_physics_world(TexturedModel &model) {
         created_body_ids.push_back(mesh_body->GetID());
     }
     spdlog::get(Systems::physics)->info("successfully loaded in model");
-
-    //    for (int i = 0; i < model->meshes.size(); i++) {
-    //
-    //        Mesh mesh = model->meshes[i];
-    //
-    //        JPH::TriangleList triangles;
-    //
-    //        assert(mesh.indices.size() % 3 == 0); // only contains triangles
-    //        for (int j = 0; j < mesh.indices.size(); j += 3) {
-    //            unsigned int j1 = mesh.indices[j];
-    //            unsigned int j2 = mesh.indices[j + 1];
-    //            unsigned int j3 = mesh.indices[j + 2];
-    //
-    //            glm::vec3 temp_v1 = mesh.vertices[j1].position;
-    //            JPH::Float3 v1 = JPH::Float3(temp_v1.x, temp_v1.y, temp_v1.z);
-    //
-    //            glm::vec3 temp_v2 = mesh.vertices[j2].position;
-    //            JPH::Float3 v2 = JPH::Float3(temp_v2.x, temp_v2.y, temp_v2.z);
-    //
-    //            glm::vec3 temp_v3 = mesh.vertices[j3].position;
-    //            JPH::Float3 v3 = JPH::Float3(temp_v3.x, temp_v3.y, temp_v3.z);
-    //
-    //            JPH::Triangle tri = JPH::Triangle(v1, v2, v3);
-    //
-    //            triangles.push_back(tri);
-    //        }
-    //
-    //        JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
-    //
-    //        JPH::Ref<JPH::Shape> mesh_shape;
-    //
-    //        // Create shape
-    //        JPH::Shape::ShapeResult result = settings.Create();
-    //        if (result.IsValid()) {
-    //            mesh_shape = result.Get();
-    //        } else {
-    //            throw std::runtime_error("couldn't get resulting shape");
-    //        }
-    //
-    //        JPH::BodyCreationSettings mesh_settings(mesh_shape, JPH::RVec3(0.0, 0.0, 0.0), JPH::Quat::sIdentity(),
-    //                                                JPH::EMotionType::Static, Layers::NON_MOVING);
-    //        JPH::Body *mesh_body = body_interface.CreateBody(mesh_settings); // Note that if we run out of bodies this
-    //        can
-    //        // return nullptr
-    //        body_interface.AddBody(mesh_body->GetID(), JPH::EActivation::DontActivate);
-    //        created_body_ids.push_back(mesh_body->GetID());
-    //    }
 }
 
 /**
@@ -243,12 +205,14 @@ void Physics::update_characters_only(float delta_time) {
     // update_settings.mWalkStairsStepUp = character->GetUp() *
     // update_settings.mWalkStairsStepUp.Length();
     //
+    spdlog::get(Systems::physics)->info("starting physics update");
     for (const auto &pair : client_id_to_physics_character) {
         JPH::Ref<JPH::CharacterVirtual> character = pair.second;
         character->ExtendedUpdate(delta_time, -character->GetUp() * physics_system.GetGravity().Length(),
                                   update_settings, physics_system.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
                                   physics_system.GetDefaultLayerFilter(Layers::MOVING), {}, {}, *temp_allocator);
     }
+    spdlog::get(Systems::physics)->info("ended physics update");
     // this->physics_state_recorder
 }
 
