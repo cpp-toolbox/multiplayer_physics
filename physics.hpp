@@ -24,6 +24,7 @@ class Physics {
 
     JPH::PhysicsSystem physics_system;
 
+    void update_specific_character(float delta_time, uint64_t client_id);
     void update_characters_only(float delta_time);
     void update(float delta_time);
 

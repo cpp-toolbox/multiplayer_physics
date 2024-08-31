@@ -10,6 +10,8 @@
 #include "Jolt/Physics/StateRecorder.h"
 #include <stdexcept>
 
+#include "formatting.hpp"
+
 //// Disable common warnings triggered by Jolt, you can use
 /// JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to
 /// store and restore the warning state
@@ -123,6 +125,7 @@ void Physics::load_model_into_physics_world(
         }
 
         JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
+
         JPH::Ref<JPH::Shape> mesh_shape;
 
         // Create shape
@@ -212,6 +215,26 @@ void Physics::update_characters_only(float delta_time) {
     }
     spdlog::get(Systems::physics)->info("ended physics update");
     // this->physics_state_recorder
+}
+
+void Physics::update_specific_character(float delta_time, uint64_t client_id) {
+
+    // Safely access and call the function if the key exists
+    auto potential_character_pair = client_id_to_physics_character.find(client_id);
+    if (potential_character_pair != client_id_to_physics_character.end()) {
+        JPH::Ref<JPH::CharacterVirtual> requested_character =
+            potential_character_pair->second; // Call the function with an argument
+        JPH::CharacterVirtual::ExtendedUpdateSettings update_settings;
+        spdlog::info("running physics update on {} with delta_time {} pos before {}", client_id, delta_time,
+                     requested_character->GetPosition());
+        requested_character->ExtendedUpdate(
+            delta_time, -requested_character->GetUp() * physics_system.GetGravity().Length(), update_settings,
+            physics_system.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
+            physics_system.GetDefaultLayerFilter(Layers::MOVING), {}, {}, *temp_allocator);
+        spdlog::info("pos after {}", requested_character->GetPosition());
+    } else {
+        std::cout << "tried to update specific character in physics, but couldn't find them in the map" << std::endl;
+    }
 }
 
 void Physics::clean_up_world() {
