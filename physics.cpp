@@ -56,9 +56,9 @@ JPH::Array<JPH::Vec3> fibonacci_sphere(int num_samples) {
     float phi = M_PI * (std::sqrt(5.0) - 1.0);
 
     for (int i = 0; i < num_samples; i++) {
-        float y = 1 - ((float) i / ((float) num_samples - 1)) * 2;
+        float y = 1 - ((float)i / ((float)num_samples - 1)) * 2;
         float radius = std::sqrt(1 - y * y);
-        float theta = phi * (float) i;
+        float theta = phi * (float)i;
 
         float x = std::cos(theta) * radius;
         float z = std::sin(theta) * radius;
@@ -97,31 +97,26 @@ void Physics::initialize_world_objects() {
  * \brief For every mesh in this model, we create a physics object that
  * represents the mesh
  */
-void Physics::load_model_into_physics_world(Model &model) {
+void Physics::load_model_into_physics_world(
+    std::vector<std::vector<glm::vec3>> &ordered_vertex_positions_for_each_mesh) {
 
     JPH::BodyInterface &body_interface = physics_system.GetBodyInterface();
 
-    for (auto mesh : model.meshes) {
+    for (auto &ordered_vertex_positions_for_mesh : ordered_vertex_positions_for_each_mesh) {
+
+        assert(ordered_vertex_positions_for_mesh.size() % 3 == 0);
 
         JPH::TriangleList triangles;
-        // Iterate through the indices 3 at a time
-        for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-            glm::vec3 v1 = mesh.vertex_positions[mesh.indices[i]];
-            glm::vec3 v2 = mesh.vertex_positions[mesh.indices[i + 1]];
-            glm::vec3 v3 = mesh.vertex_positions[mesh.indices[i + 2]];
-
-//            // Output the triangle vertices
-//            std::cout << "Triangle " << i / 3 << ": " << std::endl;
-//            std::cout << "  Vertex 1: (" << v1.x << ", " << v1.y << ", " << v1.z << ")" << std::endl;
-//            std::cout << "  Vertex 2: (" << v2.x << ", " << v2.y << ", " << v2.z << ")" << std::endl;
-//            std::cout << "  Vertex 3: (" << v3.x << ", " << v3.y << ", " << v3.z << ")" << std::endl;
+        for (std::size_t i = 0; i < ordered_vertex_positions_for_mesh.size(); i += 3) {
+            // Ensure there are at least 3 elements remaining
+            glm::vec3 &v1 = ordered_vertex_positions_for_mesh[i];
+            glm::vec3 &v2 = ordered_vertex_positions_for_mesh[i + 1];
+            glm::vec3 &v3 = ordered_vertex_positions_for_mesh[i + 2];
 
             JPH::Float3 jv1 = JPH::Float3(v1.x, v1.y, v1.z);
             JPH::Float3 jv2 = JPH::Float3(v2.x, v2.y, v2.z);
             JPH::Float3 jv3 = JPH::Float3(v3.x, v3.y, v3.z);
-
             JPH::Triangle tri = JPH::Triangle(jv1, jv2, jv3);
-
             triangles.push_back(tri);
         }
 
@@ -160,13 +155,14 @@ void Physics::create_character(unsigned int client_id) {
     // lower sphere of the capsule
 
     JPH::Ref<JPH::CharacterVirtual> character =
-            new JPH::CharacterVirtual(settings, JPH::RVec3(0.0f, 10.0f, 0.0f), JPH::Quat::sIdentity(), &physics_system);
+        new JPH::CharacterVirtual(settings, JPH::RVec3(0.0f, 10.0f, 0.0f), JPH::Quat::sIdentity(), &physics_system);
 
     client_id_to_physics_character[client_id] = character;
     spdlog::get(Systems::physics)->info("just created a new physics character with id {}", client_id);
 }
 
-void Physics::delete_character(unsigned int client_id) { client_id_to_physics_character.erase(client_id);
+void Physics::delete_character(unsigned int client_id) {
+    client_id_to_physics_character.erase(client_id);
     spdlog::get(Systems::physics)->info("just deleted physics character with id {}", client_id);
 }
 
@@ -206,12 +202,14 @@ void Physics::update_characters_only(float delta_time) {
     // update_settings.mWalkStairsStepUp = character->GetUp() *
     // update_settings.mWalkStairsStepUp.Length();
     //
-    for (const auto &pair: client_id_to_physics_character) {
+    spdlog::get(Systems::physics)->info("starting physics update");
+    for (const auto &pair : client_id_to_physics_character) {
         JPH::Ref<JPH::CharacterVirtual> character = pair.second;
         character->ExtendedUpdate(delta_time, -character->GetUp() * physics_system.GetGravity().Length(),
                                   update_settings, physics_system.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
                                   physics_system.GetDefaultLayerFilter(Layers::MOVING), {}, {}, *temp_allocator);
     }
+    spdlog::get(Systems::physics)->info("ended physics update");
     // this->physics_state_recorder
 }
 
@@ -238,7 +236,7 @@ void Physics::update_specific_character(float delta_time, uint64_t client_id) {
 void Physics::clean_up_world() {
     JPH::BodyInterface &body_interface = physics_system.GetBodyInterface();
 
-    for (auto body_id: created_body_ids) {
+    for (auto body_id : created_body_ids) {
         body_interface.RemoveBody(body_id);
         body_interface.DestroyBody(body_id);
     }
