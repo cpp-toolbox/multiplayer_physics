@@ -10,6 +10,8 @@
 #include "Jolt/Physics/StateRecorder.h"
 #include <stdexcept>
 
+#include "formatting.hpp"
+
 //// Disable common warnings triggered by Jolt, you can use
 /// JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to
 /// store and restore the warning state
@@ -121,76 +123,28 @@ void Physics::load_model_into_physics_world(Model &model) {
             JPH::Triangle tri = JPH::Triangle(jv1, jv2, jv3);
 
             triangles.push_back(tri);
-
-            JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
-
-            JPH::Ref<JPH::Shape> mesh_shape;
-
-            // Create shape
-            JPH::Shape::ShapeResult result = settings.Create();
-            if (result.IsValid()) {
-                mesh_shape = result.Get();
-            } else {
-                throw std::runtime_error("couldn't get resulting shape");
-            }
-
-            JPH::BodyCreationSettings mesh_settings(mesh_shape, JPH::RVec3(0.0, 0.0, 0.0), JPH::Quat::sIdentity(),
-                                                    JPH::EMotionType::Static, Layers::NON_MOVING);
-            JPH::Body *mesh_body = body_interface.CreateBody(mesh_settings); // Note that if we run out of bodies this can
-            // return nullptr
-            body_interface.AddBody(mesh_body->GetID(), JPH::EActivation::DontActivate);
-            created_body_ids.push_back(mesh_body->GetID());
         }
 
+        JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
+
+        JPH::Ref<JPH::Shape> mesh_shape;
+
+        // Create shape
+        JPH::Shape::ShapeResult result = settings.Create();
+        if (result.IsValid()) {
+            mesh_shape = result.Get();
+        } else {
+            throw std::runtime_error("couldn't get resulting shape");
+        }
+
+        JPH::BodyCreationSettings mesh_settings(mesh_shape, JPH::RVec3(0.0, 0.0, 0.0), JPH::Quat::sIdentity(),
+                                                JPH::EMotionType::Static, Layers::NON_MOVING);
+        JPH::Body *mesh_body = body_interface.CreateBody(mesh_settings); // Note that if we run out of bodies this can
+        // return nullptr
+        body_interface.AddBody(mesh_body->GetID(), JPH::EActivation::DontActivate);
+        created_body_ids.push_back(mesh_body->GetID());
     }
     spdlog::get(Systems::physics)->info("successfully loaded in model");
-
-
-//    for (int i = 0; i < model->meshes.size(); i++) {
-//
-//        Mesh mesh = model->meshes[i];
-//
-//        JPH::TriangleList triangles;
-//
-//        assert(mesh.indices.size() % 3 == 0); // only contains triangles
-//        for (int j = 0; j < mesh.indices.size(); j += 3) {
-//            unsigned int j1 = mesh.indices[j];
-//            unsigned int j2 = mesh.indices[j + 1];
-//            unsigned int j3 = mesh.indices[j + 2];
-//
-//            glm::vec3 temp_v1 = mesh.vertices[j1].position;
-//            JPH::Float3 v1 = JPH::Float3(temp_v1.x, temp_v1.y, temp_v1.z);
-//
-//            glm::vec3 temp_v2 = mesh.vertices[j2].position;
-//            JPH::Float3 v2 = JPH::Float3(temp_v2.x, temp_v2.y, temp_v2.z);
-//
-//            glm::vec3 temp_v3 = mesh.vertices[j3].position;
-//            JPH::Float3 v3 = JPH::Float3(temp_v3.x, temp_v3.y, temp_v3.z);
-//
-//            JPH::Triangle tri = JPH::Triangle(v1, v2, v3);
-//
-//            triangles.push_back(tri);
-//        }
-//
-//        JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
-//
-//        JPH::Ref<JPH::Shape> mesh_shape;
-//
-//        // Create shape
-//        JPH::Shape::ShapeResult result = settings.Create();
-//        if (result.IsValid()) {
-//            mesh_shape = result.Get();
-//        } else {
-//            throw std::runtime_error("couldn't get resulting shape");
-//        }
-//
-//        JPH::BodyCreationSettings mesh_settings(mesh_shape, JPH::RVec3(0.0, 0.0, 0.0), JPH::Quat::sIdentity(),
-//                                                JPH::EMotionType::Static, Layers::NON_MOVING);
-//        JPH::Body *mesh_body = body_interface.CreateBody(mesh_settings); // Note that if we run out of bodies this can
-//        // return nullptr
-//        body_interface.AddBody(mesh_body->GetID(), JPH::EActivation::DontActivate);
-//        created_body_ids.push_back(mesh_body->GetID());
-//    }
 }
 
 /**
@@ -259,6 +213,26 @@ void Physics::update_characters_only(float delta_time) {
                                   physics_system.GetDefaultLayerFilter(Layers::MOVING), {}, {}, *temp_allocator);
     }
     // this->physics_state_recorder
+}
+
+void Physics::update_specific_character(float delta_time, uint64_t client_id) {
+
+    // Safely access and call the function if the key exists
+    auto potential_character_pair = client_id_to_physics_character.find(client_id);
+    if (potential_character_pair != client_id_to_physics_character.end()) {
+        JPH::Ref<JPH::CharacterVirtual> requested_character =
+            potential_character_pair->second; // Call the function with an argument
+        JPH::CharacterVirtual::ExtendedUpdateSettings update_settings;
+        spdlog::info("running physics update on {} with delta_time {} pos before {}", client_id, delta_time,
+                     requested_character->GetPosition());
+        requested_character->ExtendedUpdate(
+            delta_time, -requested_character->GetUp() * physics_system.GetGravity().Length(), update_settings,
+            physics_system.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
+            physics_system.GetDefaultLayerFilter(Layers::MOVING), {}, {}, *temp_allocator);
+        spdlog::info("pos after {}", requested_character->GetPosition());
+    } else {
+        std::cout << "tried to update specific character in physics, but couldn't find them in the map" << std::endl;
+    }
 }
 
 void Physics::clean_up_world() {
