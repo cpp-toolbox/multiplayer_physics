@@ -106,7 +106,6 @@ void Physics::load_model_into_physics_world(
 
         JPH::TriangleList triangles;
         for (std::size_t i = 0; i < ordered_vertex_positions_for_mesh.size(); i += 3) {
-            // Ensure there are at least 3 elements remaining
             glm::vec3 &v1 = ordered_vertex_positions_for_mesh[i];
             glm::vec3 &v2 = ordered_vertex_positions_for_mesh[i + 1];
             glm::vec3 &v3 = ordered_vertex_positions_for_mesh[i + 2];
@@ -117,11 +116,10 @@ void Physics::load_model_into_physics_world(
             JPH::Triangle tri = JPH::Triangle(jv1, jv2, jv3);
             triangles.push_back(tri);
 
-            // Do something with v1, v2, and v3
-            std::cout << "Triangle: \n";
-            std::cout << "v1: (" << v1.x << ", " << v1.y << ", " << v1.z << ")\n";
-            std::cout << "v2: (" << v2.x << ", " << v2.y << ", " << v2.z << ")\n";
-            std::cout << "v3: (" << v3.x << ", " << v3.y << ", " << v3.z << ")\n";
+            spdlog::info("Triangle: ");
+            spdlog::info("v1: ({}, {}, {})", v1.x, v1.y, v1.z);
+            spdlog::info("v2: ({}, {}, {})", v2.x, v2.y, v2.z);
+            spdlog::info("v3: ({}, {}, {})", v3.x, v3.y, v3.z);
         }
 
         JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
