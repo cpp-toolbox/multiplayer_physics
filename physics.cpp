@@ -86,11 +86,11 @@ void Physics::initialize_world_objects() {
 
     JPH::BodyCreationSettings ball_creation_settings(ball_shape, JPH::RVec3(5.0, 20.0, 5.0), JPH::Quat::sIdentity(),
                                                      JPH::EMotionType::Dynamic, Layers::MOVING);
-    JPH::Body *ball = body_interface.CreateBody(ball_creation_settings); // Note that if we run out of bodies this can
+    debug_ball = body_interface.CreateBody(ball_creation_settings); // Note that if we run out of bodies this can
     // return nullptr
-    body_interface.AddBody(ball->GetID(), JPH::EActivation::Activate);
-    created_body_ids.push_back(ball->GetID());
-    body_interface.SetLinearVelocity(ball->GetID(), JPH::Vec3(0.0f, -5.0f, 0.0f));
+    body_interface.AddBody(debug_ball->GetID(), JPH::EActivation::Activate);
+    created_body_ids.push_back(debug_ball->GetID());
+    body_interface.SetLinearVelocity(debug_ball->GetID(), JPH::Vec3(0.0f, -5.0f, 0.0f));
 }
 
 /**
@@ -206,14 +206,18 @@ void Physics::update_characters_only(float delta_time) {
     // update_settings.mWalkStairsStepUp = character->GetUp() *
     // update_settings.mWalkStairsStepUp.Length();
     //
-    spdlog::get(Systems::physics)->info("starting physics update");
+    if (debug_logging) {
+        spdlog::get(Systems::physics)->info("starting physics update");
+    }
     for (const auto &pair : client_id_to_physics_character) {
         JPH::Ref<JPH::CharacterVirtual> character = pair.second;
         character->ExtendedUpdate(delta_time, -character->GetUp() * physics_system.GetGravity().Length(),
                                   update_settings, physics_system.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
                                   physics_system.GetDefaultLayerFilter(Layers::MOVING), {}, {}, *temp_allocator);
     }
-    spdlog::get(Systems::physics)->info("ended physics update");
+    if (debug_logging) {
+        spdlog::get(Systems::physics)->info("ended physics update");
+    }
     // this->physics_state_recorder
 }
 
