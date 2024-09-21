@@ -173,7 +173,7 @@ void Physics::delete_character(unsigned int client_id) {
 /**
  * \brief updates the objects part of this physics simulation
  */
-void Physics::update(float delta_time) {
+void Physics::update_characters_and_world(float delta_time) {
     this->update_characters_only(delta_time); // accounts for predicted inputs
     physics_system.Update(delta_time, cCollisionSteps, temp_allocator, job_system);
     // JPH::StateRecorderImpl physics_state_after_update;
