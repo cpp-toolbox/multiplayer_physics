@@ -3,6 +3,8 @@
 // The Jolt headers don't include Jolt.h. Always include Jolt.h before including
 // any other Jolt header. You can use Jolt.h in your precompiled header to speed
 // up compilation.
+//
+#include <Jolt/Jolt.h>
 #include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 #include "Jolt/Physics/Collision/Shape/ConvexHullShape.h"
@@ -118,10 +120,10 @@ void Physics::load_model_into_physics_world(
             JPH::Triangle tri = JPH::Triangle(jv1, jv2, jv3);
             triangles.push_back(tri);
 
-            spdlog::info("Triangle: ");
-            spdlog::info("v1: ({}, {}, {})", v1.x, v1.y, v1.z);
-            spdlog::info("v2: ({}, {}, {})", v2.x, v2.y, v2.z);
-            spdlog::info("v3: ({}, {}, {})", v3.x, v3.y, v3.z);
+            /*spdlog::info("Triangle: ");*/
+            /*spdlog::info("v1: ({}, {}, {})", v1.x, v1.y, v1.z);*/
+            /*spdlog::info("v2: ({}, {}, {})", v2.x, v2.y, v2.z);*/
+            /*spdlog::info("v3: ({}, {}, {})", v3.x, v3.y, v3.z);*/
         }
 
         JPH::MeshShapeSettings settings = JPH::MeshShapeSettings(triangles);
