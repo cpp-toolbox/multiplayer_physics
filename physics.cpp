@@ -231,13 +231,13 @@ void Physics::update_specific_character(float delta_time, uint64_t client_id) {
         JPH::Ref<JPH::CharacterVirtual> requested_character =
             potential_character_pair->second; // Call the function with an argument
         JPH::CharacterVirtual::ExtendedUpdateSettings update_settings;
-        spdlog::info("running physics update on {} with delta_time {} pos before {}", client_id, delta_time,
-                     requested_character->GetPosition());
+        /*spdlog::info("running physics update on {} with delta_time {} pos before {}", client_id, delta_time,*/
+        /*             requested_character->GetPosition());*/
         requested_character->ExtendedUpdate(
             delta_time, -requested_character->GetUp() * physics_system.GetGravity().Length(), update_settings,
             physics_system.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
             physics_system.GetDefaultLayerFilter(Layers::MOVING), {}, {}, *temp_allocator);
-        spdlog::info("pos after {}", requested_character->GetPosition());
+        /*spdlog::info("pos after {}", requested_character->GetPosition());*/
     } else {
         std::cout << "tried to update specific character in physics, but couldn't find them in the map" << std::endl;
     }
