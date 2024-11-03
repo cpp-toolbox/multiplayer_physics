@@ -38,6 +38,7 @@ class Physics {
     std::unordered_map<unsigned int, JPH::Ref<JPH::CharacterVirtual>> client_id_to_physics_character;
     void create_character(unsigned int client_id);
     void delete_character(unsigned int client_id);
+    std::vector<JPH::BodyID> created_body_ids;
 
   private:
     void initialize_engine();
@@ -61,8 +62,6 @@ class Physics {
     BPLayerInterfaceImpl broad_phase_layer_interface;
     ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
     ObjectLayerPairFilterImpl object_vs_object_layer_filter;
-
-    std::vector<JPH::BodyID> created_body_ids;
 };
 
 #endif
